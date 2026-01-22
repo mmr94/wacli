@@ -32,7 +32,8 @@ func sendFile(ctx context.Context, a interface {
 	}
 	mimeType := strings.TrimSpace(mimeOverride)
 	if mimeType == "" {
-		mimeType = mime.TypeByExtension(strings.ToLower(filepath.Ext(name)))
+		// Use filePath for MIME detection, not the display name override
+		mimeType = mime.TypeByExtension(strings.ToLower(filepath.Ext(filePath)))
 	}
 	if mimeType == "" {
 		sniff := data
