@@ -18,6 +18,7 @@ func newAuthCmd(flags *rootFlags) *cobra.Command {
 	var follow bool
 	var idleExit time.Duration
 	var downloadMedia bool
+	var JSON bool
 
 	cmd := &cobra.Command{
 		Use:   "auth",
@@ -37,7 +38,7 @@ func newAuthCmd(flags *rootFlags) *cobra.Command {
 				mode = appPkg.SyncModeFollow
 			}
 
-			fmt.Fprintln(os.Stderr, "Starting authentication…")
+			//fmt.Fprintln(os.Stderr, "Starting authentication…")
 			res, err := a.Sync(ctx, appPkg.SyncOptions{
 				Mode:            mode,
 				AllowQR:         true,
@@ -46,6 +47,14 @@ func newAuthCmd(flags *rootFlags) *cobra.Command {
 				RefreshGroups:   true,
 				IdleExit:        idleExit,
 				OnQRCode: func(code string) {
+					if JSON {
+						out.WriteJSON(os.Stdout, map[string]any{
+							"type": "qr",
+							"qr":   code,
+						})
+						return
+					}
+
 					fmt.Fprintln(os.Stderr, "\nScan this QR code with WhatsApp (Linked Devices):")
 					qrterminal.GenerateHalfBlock(code, qrterminal.M, os.Stderr)
 					fmt.Fprintln(os.Stderr)
@@ -70,6 +79,7 @@ func newAuthCmd(flags *rootFlags) *cobra.Command {
 	cmd.Flags().BoolVar(&follow, "follow", false, "keep syncing after auth")
 	cmd.Flags().DurationVar(&idleExit, "idle-exit", 30*time.Second, "exit after being idle (bootstrap/once modes)")
 	cmd.Flags().BoolVar(&downloadMedia, "download-media", false, "download media in the background during sync")
+	cmd.Flags().BoolVar(&JSON, "json", false, "emit QR payload as JSON (no terminal QR)")
 
 	cmd.AddCommand(newAuthStatusCmd(flags))
 	cmd.AddCommand(newAuthLogoutCmd(flags))
